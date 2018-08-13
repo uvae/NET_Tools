@@ -31,7 +31,7 @@ typedef struct myEthernet{
 	uint16_t type;
 }myEthernet;
 
-void arpRulesPacket(struct myArp *arp, unsigned char *senderMac, char *senderIP, unsigned char *targetMac, char *targetIP, uint16_t OPcode=0x0002) {
+void arpRulesPacket(struct myArp *arp, u_char *senderMac, char *senderIP, u_char *targetMac, char *targetIP, uint16_t OPcode=0x0002) {
 	arp->hType = ntohs(0x0001);
 	arp->pType = ntohs(0x0800);
 	arp->hLength = 0x06;
@@ -43,13 +43,13 @@ void arpRulesPacket(struct myArp *arp, unsigned char *senderMac, char *senderIP,
 	inet_pton(AF_INET, targetIP, &arp->targetIP);
 }
 
-void arpRulesEthernet(struct myEthernet *ethernet, unsigned char *desMac, unsigned char *srcMac) {
+void arpRulesEthernet(struct myEthernet *ethernet, u_char *desMac, u_char *srcMac) {
 	memcpy(ethernet->desMac, desMac, 6);
 	memcpy(ethernet->srcMac, srcMac, 6);
 	ethernet->type = ntohs(0x0806);
 }
 
-void getMyMac(char *dev, unsigned char *mac) {
+void getMyMac(char *dev, u_char *mac) {
 	struct ifreq s;
     	int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
 
@@ -57,7 +57,7 @@ void getMyMac(char *dev, unsigned char *mac) {
     	strncpy(s.ifr_name, dev, IFNAMSIZ-1);
 
     	ioctl(fd, SIOCGIFHWADDR, &s);
-	memcpy(mac, (unsigned char*)s.ifr_hwaddr.sa_data, 6);
+	memcpy(mac, (u_char*)s.ifr_hwaddr.sa_data, 6);
 }
 
 char *getMyIP(char *dev) {
@@ -87,14 +87,14 @@ int main(int argc, char* argv[]) {
 	struct myArp arp, *rep_arp;
 	struct myEthernet ethernet, *rep_ethernet;
 	
-	unsigned char *my_Mac = (unsigned char*)malloc(6);
+	u_char *my_Mac = (u_char*)malloc(6);
 	getMyMac(dev, my_Mac);
 	char *my_IP = getMyIP(dev);
 
 	char *sender_IP = argv[2], *target_IP = argv[3];
-	unsigned char *sender_Mac = (unsigned char*)malloc(6);
+	u_char *sender_Mac = (u_char*)malloc(6);
 	
-	unsigned char temp[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, temp2[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	u_char temp[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, temp2[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 	arpRulesEthernet(&ethernet, temp, my_Mac);
 	arpRulesPacket(&arp, my_Mac, my_IP, temp2, sender_IP, 0x0001);
 	
@@ -120,8 +120,8 @@ int main(int argc, char* argv[]) {
 		if(ntohs(rep_ethernet->type) == 0x0806 ) {
 			rep_arp = (struct myArp*)(packet+IP_HEADER_SIZE);
 
-			if(memcmp((unsigned char *)&arp.targetIP, (unsigned char *)rep_arp->senderIP, 4) != -1) {
-				sender_Mac = (unsigned char *)rep_arp->senderMac;
+			if(memcmp((u_char *)&arp.targetIP, (u_char *)rep_arp->senderIP, 4) != -1) {
+				sender_Mac = (u_char *)rep_arp->senderMac;
 				break;
 			}
 		}
